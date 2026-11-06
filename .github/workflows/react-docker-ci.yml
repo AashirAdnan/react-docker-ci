@@ -33,3 +33,19 @@ jobs:
           push: ${{github.event_name == 'push'}}
           file: Dockerfile
           tags: ghcr.io/aashiradnan/react-docker-ci:latest
+  Deploy:
+    runs-on: self-hosted
+    needs: GHCR
+    if: ${{github.event_name == 'push'}}
+    steps:
+      - name: login to ghcr
+        run: echo "${{secrets.GITHUB_TOKEN}}" | docker login ghcr.io -u ${{github.actor}} --password-stdin
+
+      - name: pull the docker image
+        run: docker pull ghcr.io/aashiradnan/react-docker-ci:latest
+
+      - name: remove old container
+        run: docker container rm -f react-docker-ci-selfhosted || true
+
+      - name: make a new container
+        run: docker run -d --name react-docker-ci-selfhosted -p 3000:80 ghcr.io/aashiradnan/react-docker-ci:latest
